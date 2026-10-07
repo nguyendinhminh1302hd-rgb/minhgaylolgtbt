@@ -1,5 +1,5 @@
 import { TabMode } from '../types/timer';
-import { Timer, Clock, Activity, History, Settings, Volume2, VolumeX, Maximize2, Minimize2 } from 'lucide-react';
+import { Timer, Clock, Activity, Calendar, History, Settings, Volume2, VolumeX, Maximize2, Minimize2 } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: TabMode;
@@ -77,12 +77,24 @@ export function Header({
             }`}
           >
             <Activity className="w-3.5 h-3.5 shrink-0" />
-            <span>HIIT / Khoảng Giờ</span>
+            <span>HIIT</span>
+          </button>
+
+          <button
+            onClick={() => onTabChange('calendar')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
+              activeTab === 'calendar'
+                ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-xs'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5 shrink-0" />
+            <span>Lịch</span>
           </button>
 
           <button
             onClick={() => onTabChange('clock')}
-            className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
+            className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap transition-all ${
               activeTab === 'clock'
                 ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-xs'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'

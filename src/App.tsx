@@ -5,17 +5,20 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { TabMode, SavedRecord, AppSettings } from './types/timer';
+import { CalendarEvent } from './types/calendar';
 import { Header } from './components/Header';
 import { Stopwatch } from './components/Stopwatch';
 import { CountdownTimer } from './components/CountdownTimer';
 import { IntervalTimer } from './components/IntervalTimer';
+import { CalendarView } from './components/CalendarView';
 import { WorldClock } from './components/WorldClock';
 import { HistoryModal } from './components/HistoryModal';
 import { SettingsModal } from './components/SettingsModal';
-import { Timer, Clock, Activity, Globe } from 'lucide-react';
+import { Timer, Clock, Activity, Calendar, Globe } from 'lucide-react';
 
 const STORAGE_KEY_RECORDS = 'chrono_saved_records_v1';
 const STORAGE_KEY_SETTINGS = 'chrono_app_settings_v1';
+const STORAGE_KEY_EVENTS = 'chrono_calendar_events_v1';
 
 const DEFAULT_SETTINGS: AppSettings = {
   soundEnabled: true,
@@ -53,6 +56,33 @@ export default function App() {
     return [];
   });
 
+  // Calendar Planned Events
+  const [events, setEvents] = useState<CalendarEvent[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_EVENTS);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn('Could not read events from localStorage', e);
+    }
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(
+      today.getDate()
+    ).padStart(2, '0')}`;
+    return [
+      {
+        id: 'sample_1',
+        title: 'Chạy bộ buổi sáng',
+        date: todayStr,
+        time: '06:30',
+        category: 'workout',
+        durationMinutes: 30,
+        completed: false,
+        notes: 'Chạy nhẹ 5km khởi động ngày mới',
+        createdAt: Date.now(),
+      },
+    ];
+  });
+
   // Wake lock sentinel ref
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
@@ -73,6 +103,15 @@ export default function App() {
       console.error(e);
     }
   }, [records]);
+
+  // Save events on change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_EVENTS, JSON.stringify(events));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [events]);
 
   // Screen WakeLock management
   const requestWakeLock = useCallback(async () => {
@@ -178,6 +217,26 @@ export default function App() {
     }
   };
 
+  // Calendar Event Handlers
+  const handleAddEvent = (eventData: Omit<CalendarEvent, 'id' | 'createdAt'>) => {
+    const newEvent: CalendarEvent = {
+      ...eventData,
+      id: `evt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      createdAt: Date.now(),
+    };
+    setEvents((prev) => [newEvent, ...prev]);
+  };
+
+  const handleToggleEventComplete = (id: string) => {
+    setEvents((prev) =>
+      prev.map((evt) => (evt.id === id ? { ...evt, completed: !evt.completed } : evt))
+    );
+  };
+
+  const handleDeleteEvent = (id: string) => {
+    setEvents((prev) => prev.filter((evt) => evt.id !== id));
+  };
+
   const handleUpdateSettings = (newSettings: Partial<AppSettings>) => {
     setSettings((prev) => ({ ...prev, ...newSettings }));
   };
@@ -230,12 +289,23 @@ export default function App() {
           />
         )}
 
+        {activeTab === 'calendar' && (
+          <CalendarView
+            events={events}
+            onAddEvent={handleAddEvent}
+            onToggleEventComplete={handleToggleEventComplete}
+            onDeleteEvent={handleDeleteEvent}
+            savedRecords={records}
+            onNavigateToTab={setActiveTab}
+          />
+        )}
+
         {activeTab === 'clock' && <WorldClock />}
       </main>
 
       {/* Mobile Ergonomic Bottom Tab Bar (thumb navigation) */}
       <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-md border-t border-slate-800/80 px-2 py-1">
-        <div className="grid grid-cols-4 items-center h-14">
+        <div className="grid grid-cols-5 items-center h-14">
           <button
             onClick={() => setActiveTab('stopwatch')}
             className={`flex flex-col items-center justify-center py-1 transition-colors ${
@@ -264,6 +334,16 @@ export default function App() {
           >
             <Activity className="w-5 h-5" />
             <span className="text-[10px] mt-0.5">HIIT</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('calendar')}
+            className={`flex flex-col items-center justify-center py-1 transition-colors ${
+              activeTab === 'calendar' ? 'text-emerald-400 font-semibold' : 'text-slate-400'
+            }`}
+          >
+            <Calendar className="w-5 h-5" />
+            <span className="text-[10px] mt-0.5">Lịch</span>
           </button>
 
           <button

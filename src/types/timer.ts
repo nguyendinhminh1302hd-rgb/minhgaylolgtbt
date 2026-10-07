@@ -1,4 +1,4 @@
-export type TabMode = 'stopwatch' | 'timer' | 'interval' | 'clock';
+export type TabMode = 'stopwatch' | 'timer' | 'interval' | 'clock' | 'calendar';
 
 export interface LapItem {
   id: number;
