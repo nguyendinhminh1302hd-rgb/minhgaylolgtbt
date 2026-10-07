@@ -1,0 +1,6 @@
+{
+  "name": "Đồng Hồ Bấm Giờ & Đếm Ngược",
+  "description": "Ứng dụng bấm giờ chính xác cao với đo vòng (lap), hẹn giờ đếm ngược, luyện tập ngắt quãng HIIT và âm thanh cảnh báo.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
