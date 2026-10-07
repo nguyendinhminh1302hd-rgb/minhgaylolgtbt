@@ -308,7 +308,7 @@ export function CalendarView({
       {/* Main Grid: Calendar on Left, Selected Day Inspector on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Calendar Monthly Matrix */}
-        <div className="lg:col-span-8 bg-slate-900/60 border border-slate-800/80 rounded-3xl p-4 sm:p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+        <div className="lg:col-span-8 glass-panel glass-panel-hover rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col justify-between">
           {/* Weekday headers */}
           <div className="grid grid-cols-7 gap-1 text-center mb-2">
             {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map((w, idx) => (
@@ -441,7 +441,7 @@ export function CalendarView({
         </div>
 
         {/* Selected Day Details & Schedule Panel */}
-        <div className="lg:col-span-4 bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 sm:p-6 backdrop-blur-xl shadow-xl flex flex-col">
+        <div className="lg:col-span-4 glass-panel glass-panel-hover rounded-3xl p-5 sm:p-6 shadow-xl flex flex-col">
           {/* Day Header */}
           <div className="pb-4 border-b border-slate-800">
             <div className="flex items-center justify-between">

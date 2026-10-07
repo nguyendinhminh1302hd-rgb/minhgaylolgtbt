@@ -243,9 +243,9 @@ export default function App() {
 
   // Determine root container style based on theme
   const getThemeClass = () => {
-    if (settings.theme === 'oled') return 'bg-black text-slate-100';
-    if (settings.theme === 'slate') return 'bg-slate-900 text-slate-100';
-    return 'bg-slate-950 text-slate-100';
+    if (settings.theme === 'oled') return 'bg-black text-slate-100 bg-precision-grid';
+    if (settings.theme === 'slate') return 'bg-slate-900 text-slate-100 bg-precision-grid';
+    return 'bg-slate-950 text-slate-100 bg-precision-grid';
   };
 
   return (

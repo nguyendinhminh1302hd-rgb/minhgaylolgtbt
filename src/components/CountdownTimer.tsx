@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, RotateCcw, Plus, Minus, Bell, BellOff, Sparkles, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Play, Pause, RotateCcw, Plus, Minus, Bell } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { SoundEffectType, SavedRecord } from '../types/timer';
 import { formatSecondsToTime, formatHumanVietnamese } from '../utils/formatters';
@@ -25,33 +26,29 @@ const PRESETS = [
 ];
 
 export function CountdownTimer({ soundEnabled, soundType, volume, onSaveRecord }: CountdownTimerProps) {
-  // Input settings when timer is not running
   const [hoursInput, setHoursInput] = useState<number>(0);
   const [minutesInput, setMinutesInput] = useState<number>(5);
   const [secondsInput, setSecondsInput] = useState<number>(0);
 
-  // Runtime states
   const [totalInitialSeconds, setTotalInitialSeconds] = useState<number>(300);
   const [remainingSeconds, setRemainingSeconds] = useState<number>(300);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [isFinished, setIsFinished] = useState<boolean>(false);
 
-  // Alarm sound stopper
   const stopAlarmRef = useRef<(() => void) | null>(null);
 
-  // Trigger audio alarm and victory celebration
   const triggerAlarm = useCallback(() => {
     setIsFinished(true);
     setIsRunning(false);
 
     try {
       confetti({
-        particleCount: 80,
-        spread: 70,
+        particleCount: 100,
+        spread: 80,
         origin: { y: 0.6 },
       });
     } catch {
-      // Ignore if confetti fails
+      // ignore
     }
 
     if (soundEnabled) {
@@ -65,7 +62,6 @@ export function CountdownTimer({ soundEnabled, soundType, volume, onSaveRecord }
     });
   }, [soundEnabled, soundType, volume, totalInitialSeconds, onSaveRecord]);
 
-  // Clean up alarm on unmount
   useEffect(() => {
     return () => {
       if (stopAlarmRef.current) {
@@ -75,7 +71,6 @@ export function CountdownTimer({ soundEnabled, soundType, volume, onSaveRecord }
     };
   }, []);
 
-  // Interval timer engine
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | null = null;
 
@@ -96,7 +91,6 @@ export function CountdownTimer({ soundEnabled, soundType, volume, onSaveRecord }
     };
   }, [isRunning, remainingSeconds, triggerAlarm]);
 
-  // Handle Preset selection
   const handleSelectPreset = (sec: number) => {
     if (soundEnabled) playClickSound();
     const h = Math.floor(sec / 3600);
@@ -117,7 +111,6 @@ export function CountdownTimer({ soundEnabled, soundType, volume, onSaveRecord }
     }
   };
 
-  // Start timer
   const handleStart = () => {
     const calculatedTotal = hoursInput * 3600 + minutesInput * 60 + secondsInput;
     if (calculatedTotal <= 0) return;
@@ -133,13 +126,11 @@ export function CountdownTimer({ soundEnabled, soundType, volume, onSaveRecord }
     setIsRunning(true);
   };
 
-  // Pause timer
   const handlePause = () => {
     if (soundEnabled) playClickSound();
     setIsRunning(false);
   };
 
-  // Reset timer
   const handleReset = () => {
     if (soundEnabled) playClickSound();
     if (stopAlarmRef.current) {
@@ -153,7 +144,6 @@ export function CountdownTimer({ soundEnabled, soundType, volume, onSaveRecord }
     setRemainingSeconds(currentInit > 0 ? currentInit : 300);
   };
 
-  // Quick adjust remaining seconds while running/paused (+1m, +30s, -30s)
   const handleAdjustTime = (deltaSec: number) => {
     if (soundEnabled) playClickSound();
     setRemainingSeconds((prev) => {
@@ -165,7 +155,6 @@ export function CountdownTimer({ soundEnabled, soundType, volume, onSaveRecord }
     });
   };
 
-  // Dismiss ringing alarm
   const handleDismissAlarm = () => {
     if (stopAlarmRef.current) {
       stopAlarmRef.current();
@@ -175,7 +164,6 @@ export function CountdownTimer({ soundEnabled, soundType, volume, onSaveRecord }
     handleReset();
   };
 
-  // Repeat the timer
   const handleRepeatTimer = () => {
     if (stopAlarmRef.current) {
       stopAlarmRef.current();
@@ -186,171 +174,252 @@ export function CountdownTimer({ soundEnabled, soundType, volume, onSaveRecord }
     setIsRunning(true);
   };
 
-  // Progress fraction (1 when full, 0 when done)
   const progress = totalInitialSeconds > 0 ? remainingSeconds / totalInitialSeconds : 0;
   const strokeDashoffset = 880 - 880 * progress;
 
-  return (
-    <div className="w-full max-w-4xl mx-auto px-4 py-6 sm:py-10 flex flex-col items-center">
-      {/* Alarm ringing alert modal / banner */}
-      {isFinished && (
-        <div className="w-full mb-6 p-6 rounded-3xl bg-amber-500/20 border-2 border-amber-400 text-amber-200 flex flex-col sm:flex-row items-center justify-between gap-4 animate-bounce">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-bold">
-              <Bell className="w-6 h-6 animate-spin" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-white">Hết giờ!</h3>
-              <p className="text-sm text-amber-300">
-                Thời gian đếm ngược {formatHumanVietnamese(totalInitialSeconds * 1000)} đã kết thúc.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleRepeatTimer}
-              className="px-4 py-2.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 text-sm font-semibold transition-colors"
-            >
-              Lặp lại
-            </button>
-            <button
-              onClick={handleDismissAlarm}
-              className="px-5 py-2.5 rounded-xl bg-amber-400 text-slate-950 hover:bg-amber-300 text-sm font-bold shadow-lg shadow-amber-400/20 transition-colors"
-            >
-              Tắt chuông
-            </button>
-          </div>
-        </div>
-      )}
+  // Pointer angle on the circular arc (counter-clockwise or drain clockwise)
+  const angleRad = (1 - progress) * 2 * Math.PI - Math.PI / 2;
+  const pointerX = 150 + 140 * Math.cos(angleRad);
+  const pointerY = 150 + 140 * Math.sin(angleRad);
 
-      {/* Main Countdown Card */}
-      <div className="w-full relative flex flex-col items-center justify-center p-6 sm:p-12 rounded-3xl bg-slate-900/60 border border-slate-800/80 shadow-2xl backdrop-blur-xl">
+  const isCritical = remainingSeconds <= 10 && remainingSeconds > 0;
+
+  return (
+    <div className="w-full max-w-4xl mx-auto px-4 py-6 sm:py-10 flex flex-col items-center relative">
+      {/* Dynamic Ambient Background Glow Orb */}
+      <div
+        className={`absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 sm:w-96 h-80 sm:h-96 rounded-full blur-[100px] pointer-events-none transition-all duration-700 ${
+          isCritical
+            ? 'bg-rose-500/25 scale-110'
+            : isRunning
+            ? 'bg-emerald-500/20 scale-105'
+            : 'bg-emerald-500/5 scale-90'
+        }`}
+      />
+
+      {/* Alarm ringing alert banner with spring bounce animation */}
+      <AnimatePresence>
+        {isFinished && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="w-full mb-6 p-6 rounded-3xl bg-amber-500/20 border-2 border-amber-400/80 shadow-[0_0_40px_rgba(245,158,11,0.3)] backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-lg">
+                <Bell className="w-6 h-6 animate-bounce" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white glow-amber">Hết giờ đếm ngược!</h3>
+                <p className="text-sm text-amber-300">
+                  Thời gian {formatHumanVietnamese(totalInitialSeconds * 1000)} đã hoàn thành trọn vẹn.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={handleRepeatTimer}
+                className="px-4 py-2.5 rounded-xl bg-slate-900/90 text-white hover:bg-slate-800 text-sm font-semibold transition-colors border border-white/10"
+              >
+                Lặp lại
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={handleDismissAlarm}
+                className="px-5 py-2.5 rounded-xl bg-amber-400 text-slate-950 hover:bg-amber-300 text-sm font-bold shadow-lg shadow-amber-400/30 transition-colors"
+              >
+                Tắt chuông
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Glassmorphic Countdown Card */}
+      <div className="w-full relative flex flex-col items-center justify-center p-6 sm:p-12 rounded-3xl glass-panel glass-panel-hover">
+        {/* Status kicker */}
+        <div className="mb-4 flex items-center gap-2 text-xs font-mono">
+          <span
+            className={`w-2 h-2 rounded-full transition-all ${
+              isRunning ? 'bg-emerald-400 shadow-[0_0_8px_#10b981] animate-pulse' : 'bg-slate-600'
+            }`}
+          />
+          <span className="text-slate-400 uppercase tracking-widest text-[11px]">
+            {isRunning ? 'Timer Running' : remainingSeconds === 0 ? 'Completed' : 'Ready'}
+          </span>
+        </div>
+
         {/* Circular Progress Gauge */}
-        <div className="relative w-72 h-72 sm:w-88 sm:h-88 flex items-center justify-center">
+        <div className="relative w-76 h-76 sm:w-92 sm:h-92 flex items-center justify-center">
           <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 300 300">
+            <defs>
+              <filter id="timer-glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3.5" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            {/* Dial Background */}
             <circle
               cx="150"
               cy="150"
               r="140"
-              className="stroke-slate-800/80"
+              stroke="rgba(255, 255, 255, 0.05)"
               strokeWidth="6"
               fill="transparent"
             />
+
+            {/* Glowing countdown track */}
             <circle
               cx="150"
               cy="150"
               r="140"
               className="transition-[stroke-dashoffset] duration-500 ease-out"
               stroke={
-                remainingSeconds <= 10 && remainingSeconds > 0
+                isCritical
                   ? '#f43f5e'
                   : isRunning
                   ? '#10b981'
                   : '#64748b'
               }
-              strokeWidth="8"
+              strokeWidth="7"
               strokeDasharray="880"
               strokeDashoffset={strokeDashoffset}
               strokeLinecap="round"
               fill="transparent"
+              filter={isRunning ? 'url(#timer-glow)' : undefined}
             />
+
+            {/* Glowing Pointer Head */}
+            {remainingSeconds > 0 && remainingSeconds < totalInitialSeconds && (
+              <circle
+                cx={pointerX}
+                cy={pointerY}
+                r="6"
+                fill={isCritical ? '#f43f5e' : '#10b981'}
+                filter="url(#timer-glow)"
+              />
+            )}
           </svg>
 
           {/* Time digits in center */}
           <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
-            <div className="h-6 mb-1 text-xs font-semibold tracking-wider uppercase text-slate-400">
-              {isRunning ? 'Đang đếm ngược' : remainingSeconds === 0 ? 'Đã hoàn thành' : 'Sẵn sàng'}
+            <div className="h-6 mb-1 text-xs font-semibold tracking-wider uppercase text-slate-400 font-mono">
+              {Math.round(progress * 100)}% còn lại
             </div>
 
-            <div className="text-5xl sm:text-7xl font-mono font-bold tracking-tight text-white tabular-nums">
+            <div
+              className={`text-5xl sm:text-7xl font-mono font-bold tracking-tight tabular-nums ${
+                isCritical
+                  ? 'text-rose-400 glow-rose animate-pulse'
+                  : isRunning
+                  ? 'text-white glow-emerald'
+                  : 'text-white'
+              }`}
+            >
               {formatSecondsToTime(remainingSeconds, totalInitialSeconds >= 3600)}
             </div>
 
-            <div className="mt-2 text-xs font-mono text-slate-400">
+            <div className="mt-2 text-xs font-mono text-slate-400 bg-slate-900/80 px-3 py-1 rounded-full border border-white/5">
               Tổng thời gian: {formatSecondsToTime(totalInitialSeconds)}
             </div>
           </div>
         </div>
 
-        {/* Quick adjustment buttons during or before run */}
+        {/* Quick adjustment buttons with motion hover */}
         <div className="mt-4 flex items-center gap-2">
-          <button
+          <motion.button
+            whileTap={{ scale: 0.93 }}
             onClick={() => handleAdjustTime(60)}
-            className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium flex items-center gap-1 transition-colors border border-slate-700/40"
+            className="px-3.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center gap-1 transition-colors border border-white/10 shadow-sm"
           >
             <Plus className="w-3 h-3" /> 1 phút
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.93 }}
             onClick={() => handleAdjustTime(30)}
-            className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium flex items-center gap-1 transition-colors border border-slate-700/40"
+            className="px-3.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center gap-1 transition-colors border border-white/10 shadow-sm"
           >
             <Plus className="w-3 h-3" /> 30 giây
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.93 }}
             onClick={() => handleAdjustTime(-30)}
             disabled={remainingSeconds <= 30}
-            className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium flex items-center gap-1 transition-colors border border-slate-700/40 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-3.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center gap-1 transition-colors border border-white/10 disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
           >
             <Minus className="w-3 h-3" /> 30 giây
-          </button>
+          </motion.button>
         </div>
 
         {/* Primary Controls */}
         <div className="mt-8 flex items-center justify-center gap-3 sm:gap-4 w-full max-w-md">
-          <button
+          <motion.button
+            whileTap={{ scale: 0.94 }}
+            whileHover={{ scale: 1.02 }}
             onClick={handleReset}
-            className="min-h-[48px] px-5 sm:px-6 py-3 rounded-2xl bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white active:scale-95 border border-slate-700/60 font-semibold text-sm transition-all"
+            className="min-h-[50px] px-5 sm:px-6 py-3 rounded-2xl bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white border border-slate-700/80 font-semibold text-sm transition-all shadow-md"
           >
             <RotateCcw className="w-4 h-4" />
-          </button>
+          </motion.button>
 
           {isRunning ? (
-            <button
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
               onClick={handlePause}
-              className="min-h-[48px] flex-1 px-6 sm:px-8 py-3.5 rounded-2xl bg-amber-500 text-slate-950 font-bold text-base flex items-center justify-center gap-2 hover:bg-amber-400 active:scale-95 shadow-lg shadow-amber-500/20 transition-all"
+              className="min-h-[50px] flex-1 px-6 sm:px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 font-bold text-base flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(245,158,11,0.35)] hover:brightness-110 transition-all"
             >
               <Pause className="w-5 h-5 fill-current" />
               <span>Tạm dừng</span>
-            </button>
+            </motion.button>
           ) : (
-            <button
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
               onClick={handleStart}
               disabled={remainingSeconds === 0 && hoursInput === 0 && minutesInput === 0 && secondsInput === 0}
-              className="min-h-[48px] flex-1 px-6 sm:px-8 py-3.5 rounded-2xl bg-emerald-500 text-slate-950 font-bold text-base flex items-center justify-center gap-2 hover:bg-emerald-400 active:scale-95 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-40"
+              className="min-h-[50px] flex-1 px-6 sm:px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-bold text-base flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(16,185,129,0.35)] hover:brightness-110 transition-all disabled:opacity-40"
             >
               <Play className="w-5 h-5 fill-current" />
               <span>{remainingSeconds < totalInitialSeconds ? 'Tiếp tục' : 'Bắt đầu'}</span>
-            </button>
+            </motion.button>
           )}
         </div>
       </div>
 
       {/* Preset Buttons Grid */}
-      <div className="w-full mt-8 bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 sm:p-8 backdrop-blur-xl">
+      <div className="w-full mt-8 glass-panel rounded-3xl p-5 sm:p-8">
         <h3 className="text-base font-semibold text-white mb-4">
           Thời gian đếm ngược cài sẵn
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
           {PRESETS.map((preset) => (
-            <button
+            <motion.button
               key={preset.seconds}
+              whileTap={{ scale: 0.95 }}
               onClick={() => handleSelectPreset(preset.seconds)}
-              className={`p-3 rounded-2xl text-left border transition-all ${
+              className={`p-3.5 rounded-2xl text-left border transition-all ${
                 totalInitialSeconds === preset.seconds
-                  ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 shadow-xs'
-                  : 'bg-slate-800/40 hover:bg-slate-800 border-slate-700/50 text-slate-300'
+                  ? 'bg-emerald-500/15 border-emerald-500/60 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.15)]'
+                  : 'bg-slate-800/40 hover:bg-slate-800 border-white/5 text-slate-300'
               }`}
             >
               <div className="text-sm font-semibold">{preset.label}</div>
               <div className="text-xs text-slate-400 font-mono mt-0.5">
                 {formatSecondsToTime(preset.seconds)}
               </div>
-            </button>
+            </motion.button>
           ))}
         </div>
 
         {/* Custom duration inputs */}
-        <div className="mt-6 pt-6 border-t border-slate-800/80">
+        <div className="mt-6 pt-6 border-t border-white/10">
           <div className="text-sm font-semibold text-white mb-3">
             Tùy chỉnh thời gian:
           </div>
